@@ -1,0 +1,21 @@
+<odoo>
+    <data>
+        <record id="view_api_log_tree" model="ir.ui.view">
+            <field name="name">api.log.tree</field>
+            <field name="model">api.log</field>
+            <field name="arch" type="xml">
+                <tree string="Logs de API" create="false" edit="false" delete="false">
+                    <field name="response_date"/>
+                    <field name="status"/>
+                    <field name="response_text" optional="show"/>
+                </tree>
+            </field>
+        </record>
+        
+        <record id="action_api_log" model="ir.actions.act_window">
+            <field name="name">Logs de API</field>
+            <field name="res_model">api.log</field>
+            <field name="view_mode">tree</field>
+        </record>
+    </data>
+</odoo>
