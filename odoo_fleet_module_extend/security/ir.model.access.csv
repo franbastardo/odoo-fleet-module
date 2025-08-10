@@ -1,0 +1,3 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_fleet_vehicle_test,access.fleet.vehicle.test,fleet.model_fleet_vehicle,group_custom_fleet_manager,1,1,1,1
+access_api_log_test,access.api.log.test,model_api_log,group_custom_fleet_manager,1,1,1,0

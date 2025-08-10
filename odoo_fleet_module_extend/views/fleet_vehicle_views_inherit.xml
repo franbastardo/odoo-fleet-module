@@ -1,0 +1,62 @@
+<!-- views/fleet_vehicle_views_inherit.xml -->
+<odoo>
+    <data>
+        <!-- 1. VISTA DE FORMULARIO HEREDADA -->
+        <record id="view_fleet_vehicle_form_inherit_photo" model="ir.ui.view">
+            <field name="name">fleet.vehicle.form.inherit.photo</field>
+            <field name="model">fleet.vehicle</field>
+            <field name="inherit_id" ref="fleet.fleet_vehicle_view_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//sheet/div[hasclass('oe_title')]" position="before">
+                    <h1>
+                        <field name="code_sequence" readonly="1"/>
+                    </h1>
+                </xpath>
+                <xpath expr="//field[@name='image_128']" position="replace">
+                    <field name="vehicle_image" widget="image" class="oe_avatar"/>
+                </xpath>
+            </field>
+        </record>
+
+        <!-- 2. VISTA DE LISTA (TREE) HEREDADA -->
+        <record id="fleet_vehicle_tree_inherit" model="ir.ui.view">
+            <field name="name">fleet.vehicle.tree.inherit</field>
+            <field name="model">fleet.vehicle</field>
+            <field name="inherit_id" ref="fleet.fleet_vehicle_view_tree"/>
+            <field name="arch" type="xml">
+                <!-- Añadimos la columna de nuestra nueva secuencia al principio de la lista -->
+                <xpath expr="//field[@name='license_plate']" position="before">
+                    <field name="code_sequence"/>
+                </xpath>
+            </field>
+        </record>
+
+        <!-- 3. VISTA DE BÚSQUEDA HEREDADA -->
+        <record id="fleet_vehicle_search_inherit" model="ir.ui.view">
+            <field name="name">fleet.vehicle.search.inherit</field>
+            <field name="model">fleet.vehicle</field>
+            <field name="inherit_id" ref="fleet.fleet_vehicle_view_search"/>
+            <field name="arch" type="xml">
+                <!-- Añadimos la capacidad de buscar por nuestra nueva referencia -->
+                <xpath expr="//field[@name='name']" position="after">
+                    <field name="code_sequence" string="Referencia"/>
+                </xpath>
+            </field>
+        </record>
+
+        <record id="fleet_vehicle_kanban_inherit_custom_image" model="ir.ui.view">
+            <field name="name">fleet.vehicle.kanban.inherit.custom.image</field>
+            <field name="model">fleet.vehicle</field>
+            <field name="inherit_id" ref="fleet.fleet_vehicle_view_kanban"/>
+            <field name="arch" type="xml">
+                <xpath expr="//kanban/field[@name='driver_id']" position="after">
+                    <field name="vehicle_image"/>
+                </xpath>
+                <xpath expr="//div[hasclass('o_kanban_image')]" position="attributes">
+                    <attribute name="t-attf-style">background-image:url('#{kanban_image('fleet.vehicle', 'vehicle_image', record.id.raw_value)}')</attribute>
+                </xpath>
+
+            </field>
+        </record>
+    </data>
+</odoo>
