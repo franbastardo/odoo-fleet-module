@@ -8,11 +8,21 @@ class FleetVehicle(models.Model):
     """
     _inherit = 'fleet.vehicle'
 
-    vehicle_image = fields.Image(string="Foto del Vehículo")
+    vehicle_image = fields.Image(string="Foto del Vehículo", required=True)
     
     code_sequence = fields.Char(string='Referencia del Vehículo', required=True, copy=False, readonly=True, index=True, default='New')
     
+    # Sobreescribir campos que son requeridos en fleet.vehicle
     license_plate = fields.Char(required=True, index=True)
+    
+    vin_sn = fields.Char(string='VIN/SN', required=True, index=True)
+    
+    model_year = fields.Integer(string='Año del Modelo', required=True)
+    
+    Color = fields.Char(string='Color', required=True)
+    
+    category_id = fields.Many2one('fleet.vehicle.model.category', 'Category', compute='_compute_model_fields', store=True, readonly=False, required=True)
+    
     
     driver_id = fields.Many2one(
         'res.partner', 
