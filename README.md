@@ -19,6 +19,7 @@ Este módulo no reemplaza el módulo `fleet` nativo de Odoo 16, sino que lo **ex
 ### ✨ Características Principales
 
 *   **Secuencia Automática:** Creación de un código único y secuencial (`VEH/00001`) para cada nuevo vehículo.
+*   **Campos Obligatorios:** Sea sobreescriben campos del modulo de flota para que sean requeridos.
 *   **Campos Personalizados:** Se añade un campo de imagen (`Foto del Vehículo`) y se hace obligatorio el campo `Conductor` y `Placa`.
 *   **Integración con Contactos:**
     *   Un *smart button* en el formulario de contacto muestra el número de vehículos asociados.
