@@ -42,7 +42,7 @@ jobs:
             --exclude=".github" \
             --exclude="__pycache__" \
             --exclude="*.pyc" \
-            ./ odoo16@${{ steps.env-config.outputs.EC2_HOST }}:${{ steps.env-config.outputs.ODOO_PATH }}/odoo_fleet_module_extend
+            ./ odoo16@${{ steps.env-config.outputs.EC2_HOST }}:${{ steps.env-config.outputs.ODOO_PATH }}
 
       - name: 4. Restart Odoo Service
         uses: appleboy/ssh-action@master
