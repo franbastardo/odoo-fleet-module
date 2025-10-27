@@ -1,0 +1,85 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches: [staging, qa, develop]
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read  # Required for actions/checkout
+
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Determine target host
+        id: target-host
+        run: |
+          if [ "${{ github.ref }}" == "refs/heads/develop" ]; then
+            echo "EC2_HOST=${{ secrets.EC2_DEVELOP_HOST }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref }}" == "refs/heads/qa" ]; then
+            echo "EC2_HOST=${{ secrets.EC2_QA_HOST }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref }}" == "refs/heads/staging" ]; then
+            echo "EC2_HOST=${{ secrets.EC2_STAGING_HOST }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ steps.target-host.outputs.EC2_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Sync repository
+        run: |
+          rsync -avzP --delete --checksum --rsync-path="sudo rsync" \
+            --exclude="apps/app-backend/process.json" \
+            --exclude="apps/web-backend/process.json" \
+            --exclude="node_modules" \
+            --exclude=".git" \
+            ./ ${{ secrets.EC2_USER }}@${{ steps.target-host.outputs.EC2_HOST }}:/opt/posmit/monorepo/
+
+      - name: Build and restart services
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ steps.target-host.outputs.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_PRIVATE_KEY }}
+          script: |
+            echo "Building and restarting services..."
+            cd /opt/posmit/monorepo
+            sudo pnpm install
+            sudo pnpm run build
+            cd ./apps/app-backend
+            sudo pm2 restart process.json
+            cd ../web-backend
+            sudo pm2 restart process.json
+            echo "Deployment complete!"
+
+      - name: Notify Slack on success
+        if: success()
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          channel-id: ${{ secrets.SLACK_CHANNEL_ID }}
+          slack-message: "✅ Backend deployment successful!\n*Branch*: ${{ github.ref_name }}\n*By*: ${{ github.actor }}"
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+
+      - name: Notify Slack on failure
+        if: failure()
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          channel-id: ${{ secrets.SLACK_CHANNEL_ID }}
+          slack-message: "❌ Deployment failed!\n*Branch*: ${{ github.ref_name }}\n*By*: ${{ github.actor }}\n*Workflow*: <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View logs>"
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}

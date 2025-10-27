@@ -1,0 +1,74 @@
+name: Deploy Odoo Addons to EC2
+
+on:
+  push:
+    branches: [main, develop]
+
+jobs:
+  deploy:
+    name: Deploy Odoo Addons
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 1. Determine Environment Configuration
+        id: env-config
+        run: |
+          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            echo "EC2_HOST=${{ secrets.EC2_HOST }}" >> $GITHUB_OUTPUT
+            echo "ODOO_PATH=/opt/odoo16/repos/odoo_fleet_module" >> $GITHUB_OUTPUT 
+            echo "ODOO_SERVICE=odoo16" >> $GITHUB_OUTPUT # <-- CAMBIA ESTO
+          fi
+
+      - name: 2. Setup SSH Key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ steps.env-config.outputs.EC2_HOST }} >> ~/.ssh/known_hosts
+
+      - name: 3. Sync Custom Addons via Rsync
+        run: |
+          rsync -avzP --delete --checksum --rsync-path="sudo rsync" \
+            --exclude=".git*" \
+            --exclude=".github" \
+            --exclude="__pycache__" \
+            --exclude="*.pyc" \
+            ./odoo_fleet_module_extend/ ${{ secrets.EC2_USERNAME }}@${{ steps.env-config.outputs.EC2_HOST }}:${{ steps.env-config.outputs.ODOO_PATH }}/repos/odoo_fleet_module/odoo_fleet_module_extend
+
+      - name: 4. Restart Odoo Service
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ steps.env-config.outputs.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_PRIVATE_KEY }}
+          script: |
+            echo "Restarting Odoo service on ${{ steps.env-config.outputs.EC2_HOST }}..."
+            sudo systemctl restart ${{ steps.env-config.outputs.ODOO_SERVICE }}
+            echo "Odoo service restarted successfully!"
+
+      # - name: 5. Notify Slack on Success
+      #   if: success()
+      #   uses: slackapi/slack-github-action@v1.24.0
+      #   with:
+      #     channel-id: ${{ secrets.SLACK_CHANNEL_ID }}
+      #     slack-message: "✅ Despliegue de Odoo exitoso!\n*Rama*: ${{ github.ref_name }}\n*Por*: ${{ github.actor }}"
+      #   env:
+      #     SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+
+      # - name: 6. Notify Slack on Failure
+      #   if: failure()
+      #   uses: slackapi/slack-github-action@v1.24.0
+      #   with:
+      #     channel-id: ${{ secrets.SLACK_CHANNEL_ID }}
+      #     slack-message: "❌ Despliegue de Odoo fallido!\n*Rama*: ${{ github.ref_name }}\n*Por*: ${{ github.actor }}\n*Workflow*: <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|Ver logs>"
+      #   env:
+      #     SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}

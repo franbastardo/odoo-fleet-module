@@ -1,0 +1,52 @@
+name: Semantic Release
+
+on:
+  push:
+    branches: [staging]
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+
+    # Add strategy to prevent multiple concurrent releases
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Cache global npm packages
+        id: cache-global-npm
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.npm
+            /usr/local/lib/node_modules
+          key: ${{ runner.os }}-global-npm-semantic-release-v1 
+          restore-keys: |
+            ${{ runner.os }}-global-npm-semantic-release-
+
+      - name: Install global packages with npm
+        if: steps.cache-global-npm.outputs.cache-hit != 'true'
+        run: npm install -g semantic-release @semantic-release/github @semantic-release/git @semantic-release/changelog
+
+      - name: Run Semantic Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_ENV: production
+        run: npx semantic-release
