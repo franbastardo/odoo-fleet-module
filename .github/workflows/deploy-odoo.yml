@@ -42,13 +42,13 @@ jobs:
             --exclude=".github" \
             --exclude="__pycache__" \
             --exclude="*.pyc" \
-            ./ ${{ secrets.EC2_USERNAME }}@${{ steps.env-config.outputs.EC2_HOST }}:${{ steps.env-config.outputs.ODOO_PATH }}/odoo_fleet_module_extend
+            ./ odoo16@${{ steps.env-config.outputs.EC2_HOST }}:${{ steps.env-config.outputs.ODOO_PATH }}/odoo_fleet_module_extend
 
       - name: 4. Restart Odoo Service
         uses: appleboy/ssh-action@master
         with:
           host: ${{ steps.env-config.outputs.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}
+          username: odoo16
           key: ${{ secrets.EC2_PRIVATE_KEY }}
           script: |
             echo "Restarting Odoo service on ${{ steps.env-config.outputs.EC2_HOST }}..."
