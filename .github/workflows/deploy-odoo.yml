@@ -23,7 +23,7 @@ jobs:
         id: env-config
         run: |
           if [ "${{ github.ref }}" == "refs/heads/main" ]; then
-            echo "EC2_HOST=http://3.142.240.221:8069/" >> $GITHUB_OUTPUT
+            echo "EC2_HOST=http://3.142.240.221" >> $GITHUB_OUTPUT
             echo "ODOO_PATH=/opt/odoo16/repos/odoo_fleet_module" >> $GITHUB_OUTPUT 
             echo "ODOO_SERVICE=odoo16" >> $GITHUB_OUTPUT # <-- CAMBIA ESTO
           fi
